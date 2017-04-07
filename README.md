@@ -6,11 +6,11 @@
 
 Info          | Badges
 --------------|--------------
-Version       | [![Version][release-v-image]][release-url] [![NuGet Version][nuget-v-image]][nuget-url]
+Version       | [![Version][release-v-image]][release-url]
 License       | [![License][license-image]][license]
 Build Status  | [![Travis Build Status][travis-image]][travis-url] [![AppVeyor Build Status][appveyor-image]][appveyor-url]
 Chat          | [![Join Chat][gitter-image]][gitter-url]
-Issues        | [![Issues][issues-image]][issues-url]
+Issues        | [![Ready][issues-ready-image]][issues-url] [![In Progress][issues-inprogress-image]][issues-url]
 
 ## Getting Started
 
@@ -29,48 +29,124 @@ It is capable of automatically detecting and executing all of the steps necessar
 
 These are just some of the most-used features of the build system.
 
-### Using Condo
+### Installing Condo
 
-The easiest way to start using Condo is to use the [Yeoman Condo Generator][yo-url], which will configure a new "solution" structure for use with the Condo build system.
+Use the following to install condo on your local system:
 
-1. Make sure that you have Yeoman installed:
+#### macOS and Linux
 
-	```bash
-	npm install -g yo
-	```
+```bash
+curl -fsSL https://git.io/am-condo | /usr/bin/env bash
+```
 
-2. Install the Condo generator:
+#### Windows
 
-	```bash
-	npm install -g generator-condo
-	```
+```posh
+```
 
-3. Initiate the generator:
+### Adding Condo to a Project
 
-	```bash
-	yo condo
-	```
+Initialize condo in a new project using the following steps:
 
-4. Run the build:
+1. Execute `condo-init`:
 
-	OS X / Linux:
+   ```
+   dotnet condo init
+   ```
 
-	```bash
-	./condo.sh
-	```
+2. Edit the `condo.build` to include your project and company info, for example:
 
-	Windows (CLI):
+    ```
+    <?xml version="1.0" encoding="utf-8"?>
+    <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+            InitialTargets="Clean" DefaultTargets="Build">
+        <PropertyGroup>
+            <Product><!--AM.Condo--></Product>
+            <StartDateUtc><!--2017-03-15--></StartDateUtc>
 
-	```cmd
-	condo
-	```
+            <Company><!--automotiveMastermind--></Company>
+            <Authors><!--automotiveMastermind--></Authors>
 
-	Windows (PoSH):
-	```posh
-	./condo.ps1
-	```
+            <License><!--MIT--></License>
+            <LicenseUri><!--https://opensource.org/licenses/MIT--></LicenseUri>
+        </PropertyGroup>
+
+        <Import Project="$(CondoTargetsPath)\Lifecycle.targets" />
+        <Import Project="$(CondoTargetsPath)\Goals.targets" />
+    </Project>
+    ```
+
+## Using Condo
+
+### Executing Condo Locally
+
+To execute condo locally, or on a build agent where condo is already installed and cached, use the `condo-target`
+command, for example:
+
+```
+dotnet condo build
+```
+
+```
+dotnet condo test
+```
+
+```
+dotnet condo <TARGET>
+```
+
+### Executing Condo on a Build Agent
+
+Use one of the following bootstrap scripts that were added to the root of your project by `condo-init`:
+
+#### macOS and Linux
+
+```bash
+./condo.sh
+```
+
+#### Windows
+
+```posh
+.\condo.ps1
+```
+
+NOTE: The bootstrap scripts will automatically install and/or update condo and then execute the publish target.
+Basically, it is a shorthand script for executing the following commands:
+
+```
+dotnet condo update
+dotnet condo publish
+```
+
+If you would prefer to execute a different target, you can do so as follows:
+
+#### macOS and Linux
+
+```bash
+./condo.sh <TARGET> <MSBUILD_OPTIONS>
+```
+
+#### Windows
+
+```posh
+.\condo.ps1 <TARGET> <MSBUILD_OPTIONS>
+```
+
+For example:
+
+```bash
+./condo.sh test -p:purpose=unit     # you may use either the hyphen or forward slash syntax on macOS and Linux
+```
+
+```posh
+.\condo.ps1 test /p:purpose=unit    # you MUST use the forward slash syntax on Windows
+```
 
 ## Documentation
+
+NOTE: THE DOCUMENTATION IS CURRENTLY OUT OF DATE. THIS IS THE NEXT PRIORITY FOR THE CONDO TEAM. WE APOLOGIZE FOR THE
+INCONVENIENCE!
 
 For more information, please refer to the [official documentation][docs-url].
 
@@ -85,22 +161,17 @@ For more information, please refer to the [official documentation][docs-url].
 [release-url]: //github.com/automotivemastermind/condo/releases/latest
 [release-v-image]:https://img.shields.io/github/release/automotivemastermind/condo.svg?style=flat-square&label=github
 
-[travis-url]: //travis-ci.org/automotivemastermind/condo
-[travis-image]: https://img.shields.io/travis/automotivemastermind/condo.svg?label=travis
+[travis-url]: //travis-ci.org/automotiveMastermind/condo
+[travis-image]: https://img.shields.io/travis/automotiveMastermind/condo/develop.svg?label=travis
 
-[appveyor-url]: //ci.appveyor.com/project/automotivemastermind/condo
-[appveyor-image]: https://img.shields.io/appveyor/ci/automotivemastermind/condo.svg?label=appveyor
-
-[nuget-url]: //www.nuget.org/packages/automotivemastermind.condo
-[nuget-v-image]: https://img.shields.io/nuget/v/automotivemastermind.condo.svg?label=nuget
-[nuget-d-image]: https://img.shields.io/nuget/dt/automotivemastermind.condo.svg?label=nuget
-
-[yo-url]: //www.npmjs.com/package/generator-condo
+[appveyor-url]: //ci.appveyor.com/project/automotiveMastermind/condo
+[appveyor-image]: https://img.shields.io/appveyor/ci/automotiveMastermind/condo/develop.svg?label=appveyor
 
 [docs-url]: //automotivemastermind.github.io/condo
 
 [gitter-url]: //gitter.im/automotivemastermind/condo
 [gitter-image]:https://img.shields.io/badge/⊪%20gitter-join%20chat%20→-1dce73.svg
 
-[issues-url]: //waffle.io/automotivemastermind/condo
-[issues-image]: https://badge.waffle.io/automotivemastermind/condo.svg?label=backlog&title=Backlog
+[issues-url]: //waffle.io/automotiveMastermind/condo
+[issues-ready-image]: https://badge.waffle.io/automotivemastermind/condo.svg?label=ready&title=Ready
+[issues-inprogress-image]: https://badge.waffle.io/automotivemastermind/condo.svg?label=in%20progress&title=In%20Progress

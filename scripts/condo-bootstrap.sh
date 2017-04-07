@@ -58,7 +58,7 @@ function condo-bootstrap()
     local INSTALL_URI="https://github.com/automotivemastermind/condo/archive/$CONDO_BRANCH.tar.gz"
     local INSTALL_TEMP=$(mktemp -d -t am_condo)
     local CONDO_EXTRACT="$CONDO_TEMP/extract"
-    local CONDO_SOURCE="$CONDO_EXTRACT"
+    local CONDO_SCRIPTS="$CONDO_EXTRACT"
 
     mkdir -p $CONDO_EXTRACT
     tar xf $CONDO_TAR --strip-components 1 --directory $CONDO_EXTRACT
@@ -68,7 +68,7 @@ function condo-bootstrap()
     pushd $INSTALL_TEMP 1>/dev/null
     curl -skL $INSTALL_URI | tar zx
     pushd $CONDO_SCRIPTS 1>/dev/null
-    ./install.sh --source $CONDO_SOURCE
+    ./condo-install.sh --source $CONDO_SOURCE
     popd 1>/dev/null
     popd 1>/dev/null
 

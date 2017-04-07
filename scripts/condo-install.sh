@@ -41,9 +41,6 @@ __condo-install-help() {
     echo '  -nc|--no-color      do not emit color to output, which is useful for capture'
     echo '  -id|--install-dir   location in which to install condo'
     echo '                        DEFAULT: $HOME/.am/condo'
-    echo '  -r|--reset          reinstall condo'
-    echo '  -u|--update         update to the latest version of condo'
-    echo '                        NOTE: this argument is effected by the branch argument; the version will be determined by the latest commit available on the specified branch.'
     echo '  -b|--branch         install condo from the specified branch'
     echo '                        DEFAULT: master'
     echo '  -s|--source         install condo from the specified source path (local)'
@@ -55,44 +52,6 @@ __condo-install-help() {
     echo '    - no color will be emitted to the console (either STDOUT or STDERR)'
     echo '    - condo will be installed to `$HOME/.condo`'
     echo '    - the installation log will be saved to $HOME/condo-install.log'
-}
-
-__condo-help() {
-    echo 'Condo Build System'
-    echo
-    echo 'Usage:'
-    echo '  ./condo.sh [host-options] [command] [arguments] [common-options]'
-    echo
-    echo 'Host options:'
-    echo '  --version           display version number'
-    echo '  --info              display info about the host and condo build system'
-    echo
-    echo 'Arguments:'
-    echo '  [host-options]      options passed to the host (dotnet)'
-    echo '  [command]           the command to execute'
-    echo '  [arguments]         options passed to the `install` command'
-    echo '  [common-options]    options common to all commands'
-    echo
-    echo 'Common options:'
-    echo '  -h|-?|--help        print this help information'
-    echo '  -l|--log            location of the installation log'
-    echo '                        DEFAULT: $CONDO_INSTALL_DIR/condo.log'
-    echo '  -nc|--no-color      do not emit color to output, which is useful for capture'
-    echo
-    echo 'Commands:'
-    echo '  install             installs condo on the local system'
-    echo '  update              updates condo to the latest version'
-    echo '  init                initializes condo in the current directory'
-    echo '  build               uses condo to execute the build target (Build)'
-    echo '  test                uses condo to execute the test target (Test)'
-    echo '  publish             uses condo to execute the publish target (Publish)'
-    echo '  ci                  uses condo to execute the continuous integration target (CI)'
-    echo '  clean               uses condo to execute the clean target'
-    echo
-    echo 'Advanced commands:'
-    echo '  nuget               uses condo to manipulate nuget feeds and credentials'
-    echo '  conventions         uses condo to create new conventions'
-    echo '  config              edit the condo configuration'
 }
 
 __condo-install() {
@@ -113,29 +72,15 @@ __condo-install() {
     # write a newline for separation
     echo
 
-    # test for help command
-    case $1 in
-        -h|-\?|--help)
-            __condo-help
-            exit 0
-            ;;
-    esac
-
     # continue testing for arguments
     while [[ $# > 0 ]]; do
         case $1 in
             -h|-\?|--help)
-                __condo-help
+                __condo-install-help
                 exit 0
-                ;;
-            -r|--reset)
-                local CONDO_RESET=1
                 ;;
             -l|--local)
                 local CONDO_LOCAL=1
-                ;;
-            -u|--update)
-                local CONDO_UPDATE=1
                 ;;
             --uri)
                 local CONDO_URI=$2
@@ -167,20 +112,19 @@ __condo-install() {
                 local CONDO_CLR_INFO=
                 local CONDO_CLR_FAILURE=
                 local CONDO_CLR_CLEAR=
-                break
+                ;;
+            *)
+                echo -e "${CONDO_CLR_FAILURE}Invalid argument:${CONDO_CLR_CLEAR} $1"
+                __condo-install-help
+                exit 1
                 ;;
         esac
         shift
     done
 
-    if [[ -d "$CONDO_ROOT" && "$CONDO_RESET" = "1" ]]; then
+    if [ -d "$CONDO_ROOT" ]; then
         __condo-info 'Resetting condo build system...'
         rm -rf "$CONDO_ROOT"
-    fi
-
-    if [ -d "$CLI_ROOT" ]; then
-        echo 'Condo was already installed. Use `--reset` to force remove.'
-        return 0
     fi
 
     if [ -z "${DOTNET_INSTALL_DIR:-}" ]; then
@@ -220,7 +164,7 @@ __condo-install() {
 
             retries=5
 
-            until (wget -O $CONDO_TAR $CONDO_URI 2>/dev/null || curl -o $CONDO_TAR --location $CONDO_URI 2>/dev/null); do
+            until (curl $CURL_OPT -o $CONDO_TAR --location $CONDO_URI 2>/dev/null); do
                 __condo-failure "Unable to retrieve condo: '$CONDO_URI'"
 
                 if [ "$retries" -le 0 ]; then
@@ -240,6 +184,15 @@ __condo-install() {
             cp -r $CONDO_SOURCE/* $SRC_ROOT/
             cp -r $CONDO_SOURCE/template $CONDO_ROOT
             rm -Rf $CONDO_TEMP
+
+            local SHA_URI="https://api.github.com/repos/automotivemastermind/condo/commits/$CONDO_BRANCH"
+            local CONDO_SHA=$(curl $CURL_OPT $SHA_URI | grep sha | head -n 1 | sed 's#.*\:.*"\(.*\).*",#\1#')
+            local CONDO_SHA_PATH="$CONDO_ROOT/sha"
+            local CONDO_VERSION_PATH="$CONDO_ROOT/version"
+            local CONDO_BRANCH_PATH="$CONDO_ROOT/branch"
+
+            echo $CONDO_SHA > $CONDO_SHA_PATH
+            echo $CONDO_BRANCH > $CONDO_BRANCH_PATH
         fi
     fi
 
