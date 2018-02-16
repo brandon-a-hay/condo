@@ -3,7 +3,7 @@
   <!-- attempt to find polymer and polymer paths -->
   <Target Name="GetPolymerInfo" Returns="$(PolymerProjects)">
     <ItemGroup>
-      <PolymerProjectPaths Include="$(RepositoryRoot)polymer.json" Condition=" Exists('$RepositorRoot)polymer.json')" />
+      <PolymerProjectPaths Include="$(RepositoryRoot)polymer.json" Condition=" Exists('$(RepositoryRoot)polymer.json')" />
       <PolymerProjectPaths
         Include="$(RepositoryRoot)**$(slash)polymer.json"
         Exclude="$(RepositoryRoot)**$(slash)node_modules$(slash)**$(slash)polymer.json;$(RepositoryRoot)**$(slash)bower_components$(slash)**$(slash)polymer.json;$(RepositoryRoot)**$(slash)build$(slash)polymer.json" />
