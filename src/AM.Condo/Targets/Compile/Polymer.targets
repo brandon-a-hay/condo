@@ -36,7 +36,6 @@
 
     <CompileDependsOn>
       $(CompileDependsOn);
-      PolymerLint;
       PolymerBuild;
     </CompileDependsOn>
   </PropertyGroup>
