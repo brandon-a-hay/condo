@@ -15,8 +15,11 @@
     </ItemGroup>
 
     <PropertyGroup>
+      <PolymerEnabled Condition=" '$(SKIP_POLYMER)' != '' ">false</PolymerEnabled>
+      <PolymerEnabled Condition=" '$(PolymerEnabled)' != '' AND '$(PolymerEnabled.ToLower())' != 'true' ">false</PolymerEnabled>
+      <PolymerEnabled Condition=" '$(PolymerEnabled)' == '' ">true</PolymerEnabled>
       <PolymerRequired>false</PolymerRequired>
-      <PolymerRequired Condition=" @(PolymerJsonPaths->Count()) > 0 ">true</PolymerRequired>
+      <PolymerRequired Condition=" @(PolymerJsonPaths->Count()) > 0 ">$(PolymerEnabled)</PolymerRequired>
 
       <PolymerInstall Condition=" '$(SKIP_POLYMER_INSTALL)' != '' ">false</PolymerInstall>
       <PolymerInstall Condition=" '$(PolymerInstall)' != '' AND '$(PolymerInstall.ToLower())' != 'true' ">false</PolymerInstall>
