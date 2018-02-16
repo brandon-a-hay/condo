@@ -1,59 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- attempt to find polymer and polymer paths -->
-  <Target Name="GetPolymerInfo" Returns="$(PolymerProjects)">
-    <ItemGroup>
-      <PolymerProjectPaths Include="$(RepositoryRoot)polymer.json" Condition=" Exists('$RepositorRoot)polymer.json')" />
-      <PolymerProjectPaths
-        Include="$(RepositoryRoot)**$(slash)polymer.json"
-        Exclude="$(RepositoryRoot)**$(slash)node_modules$(slash)**$(slash)polymer.json;$(RepositoryRoot)**$(slash)bower_components$(slash)**$(slash)polymer.json;$(RepositoryRoot)**$(slash)build$(slash)polymer.json" />
-    </ItemGroup>
-
-    <PropertyGroup>
-      <PolymerEnabled Condition=" '$(SKIP_POLYMER)' != '' ">false</PolymerEnabled>
-      <PolymerEnabled Condition=" '$(PolymerEnabled)' != '' AND '$(PolymerEnabled.ToLower())' != 'true' ">false</PolymerEnabled>
-      <PolymerEnabled Condition=" '$(PolymerEnabled)' == '' ">true</PolymerEnabled>
-
-      <PolymerRequired>false</PolymerRequired>
-      <PolymerRequired Condition=" @(PolymerProjectPaths->Count()) > 0 ">$(PolymerEnabled)</PolymerRequired>
-    </PropertyGroup>
-
-    <GetPolymerMetadata Projects="@(PolymerProjectPaths)">
-      <Output TaskParameter="Projects" ItemName="PolymerProjects" />
-    </GetPolymerMetadata>
-  </Target>
-
-  <Target Name="ConfigurePolymer">
+  <Target Name="GetPolymerInfo" Returns="$(PolymerJsonProjects)">
     <FindCommand Command="polymer" SearchPaths="@(FindCommandSearchPaths)">
       <Output TaskParameter="ExecutablePath" PropertyName="PolymerPath" />
       <Output TaskParameter="Exists" PropertyName="HasPolymer" />
     </FindCommand>
 
+    <ItemGroup>
+      <PolymerJsonPaths Include="$(RepositoryRoot)polymer.json" Condition=" Exists('$RepositorRoot)polymer.json')" />
+      <PolymerJsonPaths
+        Include="$(RepositoryRoot)**$(slash)polymer.json"
+        Exclude="$(RepositoryRoot)**$(slash)node_modules$(slash)**$(slash)polymer.json;$(RepositoryRoot)**$(slash)bower_components$(slash)**$(slash)polymer.json;$(RepositoryRoot)**$(slash)build$(slash)polymer.json" />
+    </ItemGroup>
+
     <PropertyGroup>
-      <PolymerEnabled Condition=" $(PolymerEnabled) ">$(HasPolymer)</PolymerEnabled>
+      <PolymerRequired>false</PolymerRequired>
+      <PolymerRequired Condition=" @(PolymerJsonPaths->Count()) > 0 ">true</PolymerRequired>
 
       <PolymerInstall Condition=" '$(SKIP_POLYMER_INSTALL)' != '' ">false</PolymerInstall>
       <PolymerInstall Condition=" '$(PolymerInstall)' != '' AND '$(PolymerInstall.ToLower())' != 'true' ">false</PolymerInstall>
-      <PolymerInstall Condition=" '$(PolymerInstall)' == '' ">$(PolymerEnabled)</PolymerInstall>
+      <PolymerInstall Condition=" '$(PolymerInstall)' == '' AND $(HasPolymer) AND $(PolymerRequired) ">true</PolymerInstall>
+      <PolymerInstall Condition=" '$(PolymerInstall)' == '' ">false</PolymerInstall>
 
-      <PolymerLint Condition=" '$(SKIP_POLYMER_LINT)' != '' ">false</PolymerLint>
-      <PolymerLint Condition=" '$(PolymerLint)' != '' AND '$(PolymerLint.ToLower())' != 'true' ">false</PolymerLint>
-      <PolymerLint Condition=" '$(PolymerLint)' == '' ">$(PolymerInstall)</PolymerLint>
-
-      <PolymerBuild Condition=" '$(SKIP_POLYMER_BUILD)' != '' ">false</PolymerBuild>
       <PolymerBuild Condition=" '$(PolymerBuild)' != '' AND '$(PolymerBuild.ToLower())' != 'true' ">false</PolymerBuild>
       <PolymerBuild Condition=" '$(PolymerBuild)' == '' ">$(PolymerInstall)</PolymerBuild>
 
-      <PolymerTest Condition=" '$(SKIP_POLYMER_TEST)' != '' ">false</PolymerTest>
       <PolymerTest Condition=" '$(PolymerTest)' != '' AND '$(PolymerTest.ToLower())' != 'true' ">false</PolymerTest>
-      <PolymerTest Condition=" '$(PolymerTest)' == '' ">$(PolymerInstall)</PolymerTest>
+      <PolymerTest Condition=" '$(PolymerTest)' == '' ">$(PolymerBuild)</PolymerTest>
     </PropertyGroup>
-    <Warning Condition=" !$(HasPolymer) AND $(PolymerRequired) AND $(NpmInstall) "
-              Text="A polymer.json file was located at: %(PolymerProjectPaths.Identity), but the polymer command or executable could not be found." />
+
+    <Warning Condition=" !$(HasPolymer) AND $(PolymerRequired) AND $(NpmInstall)"
+             Text="A polymer.json file was located at: %(PolymerJsonPaths.Identity), but the polymer command or executable could not be found." />
+
+    <GetProjectMetadata Projects="@(PolymerJsonPaths)" Product="$(Product)" RepositoryRoot="$(RepositoryRoot)">
+      <Output TaskParameter="Projects" ItemName="PolymerJsonProjects" />
+    </GetProjectMetadata>
   </Target>
 
-  <Target Name="PrintPolymerProjects" Condition=" $(PolymerRequired) ">
-    <Message Importance="High" Text="Project: %(PolymerProjects.ProjectName)" />
+  <Target Name="PrintPolymerProjects" Condition=" $(NpmInstall) ">
+    <Message Importance="High" Text="Project: %(PolymerJsonProjects.ProjectName)" />
   </Target>
 
   <Target Name="PolymerInstall" Condition=" $(PolymerInstall) ">
@@ -62,20 +48,15 @@
     </PropertyGroup>
 
     <Exec Command="&quot;$(PolymerPath)&quot; install $(PolymerInstallOptions.Trim())"
-          WorkingDirectory="%(PolymerProjects.ProjectDir)" />
+          WorkingDirectory="%(PolymerJsonProjects.ProjectDir)" />
   </Target>
 
   <PropertyGroup>
     <RestoreDependsOn>
       $(RestoreDependsOn);
-      ConfigurePolymer;
-      PolymerInstall;
-    </RestoreDependsOn>
-
-    <BeforePrepare>
-      $(BeforePrepare);
       GetPolymerInfo;
       PrintPolymerProjects;
-    </BeforePrepare>
+      PolymerInstall;
+    </RestoreDependsOn>
   </PropertyGroup>
 </Project>
